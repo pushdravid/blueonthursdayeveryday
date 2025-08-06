@@ -1,11 +1,40 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Virtual Blue T-Shirt</title>
+  <meta charset="UTF-8" />
+  <title>Swipe to Open Camera</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { margin: 0; overflow: hidden; }
-    #video, #canvas {
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #000;
+      color: #fff;
+      font-family: sans-serif;
+      text-align: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #content {
+      z-index: 10;
+      position: absolute;
+      top: 20px;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    #video,
+    #canvas {
       position: fixed;
       top: 0;
       left: 0;
@@ -14,71 +43,160 @@
       object-fit: cover;
       z-index: 5;
     }
+
+    #video {
+      display: none;
+    }
   </style>
 </head>
 <body>
-<video id="video" autoplay muted playsinline></video>
-<canvas id="canvas"></canvas>
+  <div id="content">
+    <h1>Swipe up to open camera</h1>
+    <p>Try this on your phone</p>
+  </div>
 
-  <!-- TensorFlow.js -->
+  <video id="video" autoplay muted playsinline width="480" height="640" style="display:none;"></video>
+  <canvas id="canvas"></canvas>
+
+  <!-- TensorFlow.js & BodyPix -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-
-  <!-- BodyPix -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0.5"></script>
 
   <script>
+    let touchStartY = 0;
+    let touchEndY = 0;
+    let running = false;
+    let errorCount = 0;
+
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    let net;
+
+    document.body.addEventListener('touchstart', (e) => {
+      touchStartY = e.changedTouches[0].screenY;
+    });
+
+    document.body.addEventListener('touchend', (e) => {
+      touchEndY = e.changedTouches[0].screenY;
+      if (touchStartY - touchEndY > 50 && !running) {
+        running = true;
+        document.getElementById('content').style.display = 'none';
+        main();
+      }
+    });
 
     async function setupCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
-      return new Promise(resolve => {
-        video.onloadedmetadata = () => resolve(video);
-      });
+      console.log('Requesting camera access...');
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+        video.srcObject = stream;
+
+        return new Promise((resolve) => {
+          video.onloadedmetadata = () => {
+            console.log('Video metadata loaded.');
+            console.log(`Video readyState: ${video.readyState}`);
+            console.log(`Video dimensions: ${video.videoWidth} x ${video.videoHeight}`);
+
+            // Set canvas resolution to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            resolve(video);
+          };
+        });
+      } catch (err) {
+        console.error('Camera error:', err);
+        alert('Camera access denied or failed.');
+        throw err;
+      }
     }
 
     async function main() {
-      await tf.setBackend('webgl');
-      await tf.ready();
-      await setupCamera();
-      video.play();
+      try {
+        await tf.setBackend('webgl');
+        await tf.ready();
+        console.log('TensorFlow.js ready with backend:', tf.getBackend());
 
-      const net = await bodyPix.load({
-        architecture: 'MobileNetV1',
-        outputStride: 16,
-        multiplier: 0.75
-      });
-
-      async function renderFrame() {
-        const segmentation = await net.segmentPersonParts(video, {
-          internalResolution: 'medium',
-          segmentationThreshold: 0.7
+        net = await bodyPix.load({
+          architecture: 'MobileNetV1',
+          outputStride: 16,
+          multiplier: 0.75,
         });
+        console.log('BodyPix model loaded');
+      } catch (err) {
+        console.error('Initialization error:', err);
+        return;
+      }
 
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const { data } = imageData;
+      try {
+        await setupCamera();
+        await video.play();
+        video.style.display = 'block';
+      } catch (e) {
+        console.warn('Video setup failed:', e);
+        return;
+      }
 
-        for (let i = 0; i < segmentation.data.length; i++) {
-          if (segmentation.data[i] === 11 || segmentation.data[i] === 12) {
-            const j = i * 4;
-            data[j] = 0;       // R
-            data[j + 1] = 0;   // G
-            data[j + 2] = 255; // B
-            data[j + 3] = 180; // alpha
+      function renderFrame() {
+        if (
+          video.readyState >= 2 &&
+          video.videoWidth > 0 &&
+          video.videoHeight > 0
+        ) {
+          try {
+            net.segmentPersonParts(video, {
+              internalResolution: 'medium',
+              segmentationThreshold: 0.7,
+            }).then((segmentation) => {
+              errorCount = 0;
+
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const { data } = imageData;
+
+              for (let i = 0; i < segmentation.data.length; i++) {
+                if (segmentation.data[i] === 11 || segmentation.data[i] === 12) {
+                  const j = i * 4;
+                  data[j] = 0;
+                  data[j + 1] = 0;
+                  data[j + 2] = 255;
+                  data[j + 3] = 180;
+                }
+              }
+
+              ctx.putImageData(imageData, 0, 0);
+              requestAnimationFrame(renderFrame);
+            }).catch((error) => {
+              handleSegmentationError(error);
+            });
+          } catch (error) {
+            handleSegmentationError(error);
           }
+        } else {
+          console.warn('Video not ready, skipping frame...');
+          requestAnimationFrame(renderFrame);
         }
+      }
 
-        ctx.putImageData(imageData, 0, 0);
-        requestAnimationFrame(renderFrame);
+      function handleSegmentationError(error) {
+        errorCount++;
+        console.error(`Segmentation error #${errorCount}:`, error);
+        if (error && error.stack) console.error('Stack trace:', error.stack);
+
+        if (errorCount > 5) {
+          console.warn('Too many errors. Pausing...');
+          setTimeout(() => {
+            errorCount = 0;
+            requestAnimationFrame(renderFrame);
+          }, 1000);
+        } else {
+          requestAnimationFrame(renderFrame);
+        }
       }
 
       renderFrame();
     }
-
-    main();
   </script>
 </body>
 </html>
