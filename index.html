@@ -47,16 +47,35 @@
     #video {
       display: none;
     }
+    #overlay {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, 0.6);
+      color: #ffcc00;
+      text-align: center;
+      font-size: 14px;
+      z-index: 20;
+      pointer-events: none;
+      line-height: 1.4;
+      font-family: monospace;
+    }
   </style>
 </head>
 <body>
   <div id="content">
     <h1>Swipe up to open camera</h1>
-    <p>Try this on your phone</p>
+    <p>Shifa's POV: Thursday</p>
   </div>
 
-  <video id="video" autoplay muted playsinline width="480" height="640" style="display:none;"></video>
+  <video id="video" autoplay muted playsinline width="640" height="480"></video>
   <canvas id="canvas"></canvas>
+
+  <!-- 🆕 Overlay message -->
+  <div id="overlay">
+    Vibe coded<br />Works like 48% of the time
+  </div>
 
   <!-- TensorFlow.js & BodyPix -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
