@@ -5,12 +5,20 @@
   <title>Virtual Blue T-Shirt</title>
   <style>
     body { margin: 0; overflow: hidden; }
-    canvas, video { position: absolute; top: 0; left: 0; }
+    #video, #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      object-fit: cover;
+      z-index: 5;
+    }
   </style>
 </head>
 <body>
-  <video id="video" autoplay muted playsinline width="640" height="480" style="display:none;"></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
+<video id="video" autoplay muted playsinline></video>
+<canvas id="canvas"></canvas>
 
   <!-- TensorFlow.js -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
