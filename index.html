@@ -83,26 +83,22 @@
       background-color: #e6b800;
     }
 
-#mobile-message {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.95); /* Dark overlay to hide background */
-  color: #ffcc00;
-  padding: 20px;
-  font-size: 18px;
-  font-family: monospace;
-  text-align: center;
-  z-index: 9999; /* Highest z-index to sit above everything */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1.6;
-  pointer-events: auto;
-}
+    #mobile-message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #ffcc00;
+      padding: 20px;
+      font-size: 18px;
+      font-family: monospace;
+      text-align: center;
+      z-index: 100;
+      border-radius: 10px;
+    }
+
 
 
 /* Flicker animation */
@@ -146,14 +142,14 @@
 
 #critic-review::before {
   left: 10%;    /* Position of the left wreath */
-  top: 40%;       /* Center vertically */
+  top: 80%;       /* Center vertically */
   transform: rotate(50deg) scale(1.5);  /* Rotate and scale the left olive wreath */
   transform-origin: center;  /* Ensure rotation happens around the center */
 }
 
 #critic-review::after {
   right: 10%;   /* Position of the right wreath */
-  top: 40%;       /* Center vertically */
+  top: 80%;       /* Center vertically */
   transform: rotate(-50deg) scale(1.5) scaleX(-1);  /* Rotate and scale the right olive wreath */
   transform-origin: center;  /* Ensure rotation happens around the center */
 }
@@ -203,16 +199,17 @@
   <div id="content">
     <h1 id="day-display"></h1>
     <button id="start-button">Blue where?</button>
-  </div>
+
 
   <!-- Critic Review Section -->
-  <div id="critic-review-wrapper">
+  <div id="critic-review-wrapper" style="padding-top: 10%;">
     <div id="critic-review">
       <div id="critic-review-text">
       <h1>@here Shifa requests that everyone wears blue on Thursday</h1>
     </div>
     </div>
   </div>
+    </div>
 
   <video id="video" autoplay muted playsinline width="640" height="480"></video>
   <canvas id="canvas"></canvas>
@@ -250,6 +247,8 @@
 
     if (isMobile()) {
       document.getElementById('mobile-message').style.display = 'block';
+      document.getElementById('content').style.display = 'none';
+      
     }
 
     let running = false;
