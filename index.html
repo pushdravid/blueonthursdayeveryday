@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Swipe to Open Camera</title>
+  <title>Start Camera</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
     * {
@@ -30,7 +30,7 @@
       position: absolute;
       top: 20px;
       width: 100%;
-      pointer-events: none;
+      pointer-events: none; /* Ensure it does not block interactions */
     }
 
     #video,
@@ -41,12 +41,13 @@
       width: 100vw;
       height: 100vh;
       object-fit: cover;
-      z-index: 5;
+      z-index: 1; /* Ensure video and canvas are in the background */
     }
 
     #video {
       display: none;
     }
+
     #overlay {
       position: fixed;
       bottom: 0;
@@ -61,20 +62,106 @@
       line-height: 1.4;
       font-family: monospace;
     }
+
+    /* Start button styling */
+    #start-button {
+      background-color: #ffcc00;
+      color: #000;
+      font-size: 18px;
+      padding: 15px 30px;
+      border: none;
+      cursor: pointer;
+      border-radius: 5px;
+      font-family: sans-serif;
+      transition: background-color 0.3s ease;
+      z-index: 100; /* Ensure the button is on top */
+      position: relative; /* Ensure it's positioned correctly */
+      pointer-events: auto; /* Ensure it is clickable */
+    }
+
+    #start-button:hover {
+      background-color: #e6b800;
+    }
+
+    #mobile-message {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background-color: rgba(0, 0, 0, 0.8);
+      color: #ffcc00;
+      padding: 20px;
+      font-size: 18px;
+      font-family: monospace;
+      text-align: center;
+      z-index: 100;
+      border-radius: 10px;
+    }
+
+
+/* Add a hidden class to remove the olive wreaths */
+.hide-olives #critic-review::before,
+.hide-olives #critic-review::after {
+  display: none;  /* Hide the olive wreaths */
+}
+
+
+    /* Critic Review Styling (Oscar-style blockquote with olive wreaths) */
+    #critic-review::before,
+#critic-review::after {
+  content: '';
+  position: absolute;
+  width: 100px;  /* Size of the olive wreath */
+  height: 100px;
+  background-image: url('olive.png');  /* Path to your local olive image */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  z-index: 1000;  /* Ensure it stays on top */
+  opacity: 1;  /* Ensure it's fully visible */
+}
+
+#critic-review::before {
+  left: 10%;    /* Position of the left wreath */
+  top: 40%;       /* Center vertically */
+  transform: rotate(50deg) scale(1.5);  /* Rotate and scale the left olive wreath */
+  transform-origin: center;  /* Ensure rotation happens around the center */
+}
+
+#critic-review::after {
+  right: 10%;   /* Position of the right wreath */
+  top: 40%;       /* Center vertically */
+  transform: rotate(-50deg) scale(1.5) scaleX(-1);  /* Rotate and scale the right olive wreath */
+  transform-origin: center;  /* Ensure rotation happens around the center */
+}
   </style>
 </head>
 <body>
-  <div id="content">
-    <h1>Swipe up to open camera</h1>
-    <p>Shifa's POV: Thursday</p>
+  <!-- Message for mobile users -->
+  <div id="mobile-message">
+    Please open this website on a laptop for the best experience. And by best, I mean the only experience available.
+    Translation: Your iPhone is too weak to render webGL.
   </div>
 
-  <video id="video" autoplay muted playsinline width="1000" height="1500"></video>
+  <div id="content">
+    <h1 id="day-display"></h1>
+    <button id="start-button">Blue where?</button>
+  </div>
+
+  <!-- Critic Review Section -->
+  <div id="critic-review-wrapper">
+    <div id="critic-review">
+      <h1>@here Shifa requests that everyone wears blue on Thursday</h1>
+    </div>
+  </div>
+
+  <video id="video" autoplay muted playsinline width="640" height="480"></video>
   <canvas id="canvas"></canvas>
 
   <!-- 🆕 Overlay message -->
   <div id="overlay">
-    Vibe coded<br />Works like 48% of the time
+    S tier domain name; F tier engieering  <br />
   </div>
 
   <!-- TensorFlow.js & BodyPix -->
@@ -82,8 +169,31 @@
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix@2.0.5"></script>
 
   <script>
-    let touchStartY = 0;
-    let touchEndY = 0;
+    // Get current day of the week
+    function getCurrentDay() {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const currentDay = new Date().getDay();
+      return days[currentDay];
+    }
+
+    function updateDayDisplay() {
+      const currentDay = getCurrentDay();
+      const displayElement = document.getElementById('day-display');
+      displayElement.innerHTML = `Today is: <span style="text-decoration: line-through;">${currentDay}</span> <span>Thursday</span>`;
+    }
+
+    // Call this function when the page loads
+    window.onload = updateDayDisplay;
+
+    // Check if the user is on a mobile device
+    function isMobile() {
+      return /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent);
+    }
+
+    if (isMobile()) {
+      document.getElementById('mobile-message').style.display = 'block';
+    }
+
     let running = false;
     let errorCount = 0;
 
@@ -92,15 +202,15 @@
     const ctx = canvas.getContext('2d');
     let net;
 
-    document.body.addEventListener('touchstart', (e) => {
-      touchStartY = e.changedTouches[0].screenY;
-    });
-
-    document.body.addEventListener('touchend', (e) => {
-      touchEndY = e.changedTouches[0].screenY;
-      if (touchStartY - touchEndY > 50 && !running) {
+    // Start button action
+    document.getElementById('start-button').addEventListener('click', () => {
+      if (!running) {
         running = true;
         document.getElementById('content').style.display = 'none';
+
+        // Add the class to hide the olive branches
+        document.body.classList.add('hide-olives');
+
         main();
       }
     });
