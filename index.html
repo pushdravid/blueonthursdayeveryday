@@ -152,6 +152,40 @@
   transform: rotate(-50deg) scale(1.5) scaleX(-1);  /* Rotate and scale the right olive wreath */
   transform-origin: center;  /* Ensure rotation happens around the center */
 }
+
+#image-ticker {
+  display: none; /* Hidden by default */
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 100px;
+  height: 100vh;
+  overflow: hidden;
+  z-index: 30;
+  pointer-events: none;
+}
+
+.ticker-track {
+  display: flex;
+  flex-direction: column;
+  animation: scroll-vertical 10s linear infinite;
+}
+
+.ticker-track img {
+  width: 100%;
+  margin: 10px 0;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+@keyframes scroll-vertical {
+  0% {
+    transform: translateY(0%);
+  }
+  100% {
+    transform: translateY(-50%);
+  }
+}
   </style>
 </head>
 <body>
@@ -229,6 +263,8 @@
 
         // Add the class to hide the olive branches
         document.body.classList.add('hide-olives');
+
+        document.getElementById('image-ticker').style.display = 'block';
 
         main();
       }
@@ -346,5 +382,21 @@
       renderFrame();
     }
   </script>
+
+  <!-- Vertical ticker overlay -->
+<div id="image-ticker">
+  <div class="ticker-track">
+    <img src="bojack1.png" alt="">
+    <img src="bojack2.png" alt="">
+    <img src="bojack3.png" alt="">
+    <img src="bojack1.png" alt="">
+    <img src="bojack2.png" alt="">
+    <img src="bojack3.png" alt="">
+    <img src="bojack1.png" alt="">
+    <img src="bojack2.png" alt="">
+    <img src="bojack3.png" alt="">
+  </div>
+</div>
+
 </body>
 </html>
