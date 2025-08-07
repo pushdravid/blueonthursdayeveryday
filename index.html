@@ -100,6 +100,23 @@
     }
 
 
+/* Flicker animation */
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1; /* Fully visible at the start and end */
+  }
+  50% {
+    opacity: 0; /* Invisible at the halfway point */
+  }
+}
+
+/* Apply flicker effect to the text inside #critic-review */
+#critic-review-text {
+  animation: flicker 4s infinite; /* Apply the flicker animation with a duration of 1.5s */
+}
+
+
+
 /* Add a hidden class to remove the olive wreaths */
 .hide-olives #critic-review::before,
 .hide-olives #critic-review::after {
@@ -152,7 +169,9 @@
   <!-- Critic Review Section -->
   <div id="critic-review-wrapper">
     <div id="critic-review">
+      <div id="critic-review-text">
       <h1>@here Shifa requests that everyone wears blue on Thursday</h1>
+    </div>
     </div>
   </div>
 
